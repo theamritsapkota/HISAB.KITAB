@@ -1,7 +1,11 @@
 import axios from 'axios';
 import { Group, Expense, User, ApiResponse } from '@/types';
 
-// Mock data for development
+// API Configuration
+const API_BASE_URL = 'http://localhost:5000/api';
+const USE_MOCK_DATA = false; // Set to true to use mock data instead of API
+
+// Mock data for development (keeping existing mock data)
 const mockGroups: Group[] = [
   {
     id: '1',
@@ -121,17 +125,66 @@ const mockExpenses: { [groupId: string]: Expense[] } = {
   ]
 };
 
-// API Configuration
-const API_BASE_URL = 'http://localhost:5000/api';
-const USE_MOCK_DATA = true; // Set to false when backend is available
-
+// Create axios instance
 const api = axios.create({
   baseURL: API_BASE_URL,
-  timeout: 5000,
+  timeout: 10000,
   headers: {
     'Content-Type': 'application/json',
   },
 });
+
+// Request interceptor to add auth token
+api.interceptors.request.use(
+  (config) => {
+    // For demo purposes, we'll use a mock token
+    // In a real app, you'd get this from secure storage
+    const token = 'demo_token_for_testing';
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`;
+    }
+    return config;
+  },
+  (error) => {
+    return Promise.reject(error);
+  }
+);
+
+// Response interceptor for error handling
+api.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    console.error('API Error:', error.response?.data || error.message);
+    return Promise.reject(error);
+  }
+);
+
+// Helper function to calculate balances and totals
+const calculateGroupStats = (expenses: Expense[], members: string[]) => {
+  const balances: { [member: string]: number } = {};
+  let totalExpenses = 0;
+
+  // Initialize balances
+  members.forEach(member => {
+    balances[member] = 0;
+  });
+
+  // Calculate balances from expenses
+  expenses.forEach(expense => {
+    totalExpenses += expense.amount;
+    const splitAmount = expense.amount / expense.participants.length;
+
+    // Add to payer's balance
+    balances[expense.paidBy] = (balances[expense.paidBy] || 0) + expense.amount;
+
+    // Subtract split amount from each participant
+    expense.participants.forEach(participant => {
+      balances[participant] = (balances[participant] || 0) - splitAmount;
+    });
+  });
+
+  return { balances, totalExpenses };
+};
 
 // API Service Functions
 export const apiService = {
@@ -144,8 +197,34 @@ export const apiService = {
     }
 
     try {
-      const response = await api.get<ApiResponse<Group[]>>('/groups');
-      return response.data.data;
+      const response = await api.get('/groups');
+      const groups = response.data.data;
+
+      // For each group, fetch expenses and calculate stats
+      const groupsWithStats = await Promise.all(
+        groups.map(async (group: any) => {
+          try {
+            const expensesResponse = await api.get(`/expenses/group/${group.id}`);
+            const expenses = expensesResponse.data.data;
+            const { balances, totalExpenses } = calculateGroupStats(expenses, group.members);
+
+            return {
+              ...group,
+              totalExpenses,
+              balances,
+            };
+          } catch (error) {
+            console.warn(`Failed to fetch expenses for group ${group.id}:`, error);
+            return {
+              ...group,
+              totalExpenses: 0,
+              balances: {},
+            };
+          }
+        })
+      );
+
+      return groupsWithStats;
     } catch (error) {
       console.warn('API call failed, using mock data:', error);
       return mockGroups;
@@ -163,8 +242,20 @@ export const apiService = {
     }
 
     try {
-      const response = await api.get<ApiResponse<Group>>(`/group/${id}`);
-      return response.data.data;
+      const [groupResponse, expensesResponse] = await Promise.all([
+        api.get(`/groups/${id}`),
+        api.get(`/expenses/group/${id}`)
+      ]);
+
+      const group = groupResponse.data.data;
+      const expenses = expensesResponse.data.data;
+      const { balances, totalExpenses } = calculateGroupStats(expenses, group.members);
+
+      return {
+        ...group,
+        totalExpenses,
+        balances,
+      };
     } catch (error) {
       console.warn('API call failed, using mock data:', error);
       const group = mockGroups.find(g => g.id === id);
@@ -190,7 +281,7 @@ export const apiService = {
     }
 
     try {
-      const response = await api.post<ApiResponse<Group>>('/group', group);
+      const response = await api.post('/groups', group);
       return response.data.data;
     } catch (error) {
       console.warn('API call failed, using mock behavior:', error);
@@ -218,7 +309,7 @@ export const apiService = {
     }
 
     try {
-      const response = await api.get<ApiResponse<Expense[]>>(`/group/${groupId}/expenses`);
+      const response = await api.get(`/expenses/group/${groupId}`);
       return response.data.data;
     } catch (error) {
       console.warn('API call failed, using mock data:', error);
@@ -253,7 +344,7 @@ export const apiService = {
     }
 
     try {
-      const response = await api.post<ApiResponse<Expense>>('/expense', expense);
+      const response = await api.post('/expenses', expense);
       return response.data.data;
     } catch (error) {
       console.warn('API call failed, using mock behavior:', error);
@@ -275,6 +366,25 @@ export const apiService = {
       }
       
       return newExpense;
+    }
+  },
+
+  // Authentication (for future use)
+  async login(email: string, password: string): Promise<{ token: string; user: User }> {
+    try {
+      const response = await api.post('/users/login', { email, password });
+      return response.data;
+    } catch (error) {
+      throw new Error('Login failed');
+    }
+  },
+
+  async register(name: string, email: string, password: string): Promise<{ token: string; user: User }> {
+    try {
+      const response = await api.post('/users/register', { name, email, password });
+      return response.data;
+    } catch (error) {
+      throw new Error('Registration failed');
     }
   },
 };
