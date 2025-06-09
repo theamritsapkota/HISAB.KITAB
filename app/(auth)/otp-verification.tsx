@@ -11,7 +11,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useLocalSearchParams, router } from 'expo-router';
-import { ArrowLeft, Shield, RefreshCw, CheckCircle } from 'lucide-react-native';
+import { ArrowLeft, Shield, RefreshCw, CircleCheck as CheckCircle } from 'lucide-react-native';
 
 export default function OTPVerificationScreen() {
   const { email, phone, type } = useLocalSearchParams<{
@@ -265,7 +265,7 @@ export default function OTPVerificationScreen() {
           disabled={loading || otp.some(digit => !digit)}
         >
           {loading ? (
-            <ActivityIndicator color="#ffffff" size="small" />
+            <ActivityIndicator color="#ffffff\" size="small" />
           ) : (
             <>
               <CheckCircle size={20} color="#ffffff" />
@@ -287,7 +287,7 @@ export default function OTPVerificationScreen() {
               disabled={resendLoading}
             >
               {resendLoading ? (
-                <ActivityIndicator color="#2563eb" size="small" />
+                <ActivityIndicator color="#2563eb\" size="small" />
               ) : (
                 <>
                   <RefreshCw size={16} color="#2563eb" />

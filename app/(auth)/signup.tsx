@@ -255,7 +255,7 @@ export default function SignupScreen() {
               disabled={loading}
             >
               {loading ? (
-                <ActivityIndicator color="#ffffff" size="small" />
+                <ActivityIndicator color="#ffffff\" size="small" />
               ) : (
                 <>
                   <Text style={styles.signupButtonText}>Create Account</Text>

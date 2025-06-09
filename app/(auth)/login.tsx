@@ -145,7 +145,7 @@ export default function LoginScreen() {
               disabled={loading}
             >
               {loading ? (
-                <ActivityIndicator color="#ffffff" size="small" />
+                <ActivityIndicator color="#ffffff\" size="small" />
               ) : (
                 <>
                   <Text style={styles.loginButtonText}>Sign In</Text>
