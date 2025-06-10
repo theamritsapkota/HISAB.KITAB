@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 const jwt = require('jsonwebtoken');
 const User = require('../models/User');
 
@@ -32,3 +33,12 @@ const protect = async (req, res, next) => {
 };
 
 module.exports = protect;
+=======
+// backend/middleware/authMiddleware.js
+const authMiddleware = (req, res, next) => {
+  console.log('Auth middleware triggered (fake)');
+  next();
+};
+
+module.exports = authMiddleware;
+>>>>>>> cf6e25f

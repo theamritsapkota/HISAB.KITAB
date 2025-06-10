@@ -1,6 +1,8 @@
 const express = require('express');
 const cors = require('cors');
 const connectDB = require('./config/db');
+const userRoutes = require('./backend/routes/userRoutes'); // ✅ Adjust path if needed
+const cors = require('cors');
 require('dotenv').config();
 
 // Import routes
@@ -10,6 +12,7 @@ const expenseRoutes = require('./backend/routes/expenseRoutes');
 const authRoutes = require('./backend/routes/auth');
 
 const app = express();
+
 
 // Connect to MongoDB
 connectDB();
@@ -35,6 +38,14 @@ app.use('/api/expenses', expenseRoutes);
 app.use('/api/auth', authRoutes);
 
 // Health check route
+
+app.use(cors()); 
+app.use(express.json()); 
+
+connectDB();
+
+// Routes
+
 app.get('/', (req, res) => {
   res.json({ 
     message: 'SplitWise API is running!',
@@ -66,6 +77,8 @@ app.use('*', (req, res) => {
     message: `Route ${req.originalUrl} not found` 
   });
 });
+
+app.use('/api/users', userRoutes); // ✅ Mount your user routes here
 
 const PORT = process.env.PORT || 5000;
 
