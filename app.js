@@ -39,7 +39,8 @@ app.get('/', (req, res) => {
   res.json({ 
     message: 'SplitWise API is running!',
     timestamp: new Date().toISOString(),
-    status: 'healthy'
+    status: 'healthy',
+    version: '1.0.0'
   });
 });
 
@@ -47,7 +48,8 @@ app.get('/', (req, res) => {
 app.get('/api/test', (req, res) => {
   res.json({ 
     message: 'API test successful',
-    timestamp: new Date().toISOString()
+    timestamp: new Date().toISOString(),
+    environment: process.env.NODE_ENV || 'development'
   });
 });
 
@@ -73,6 +75,7 @@ app.listen(PORT, () => {
   console.log(`🚀 Server running on port ${PORT}`);
   console.log(`📱 API available at http://localhost:${PORT}`);
   console.log(`🔗 Health check: http://localhost:${PORT}/`);
+  console.log(`🌍 Environment: ${process.env.NODE_ENV || 'development'}`);
 });
 
 module.exports = app;

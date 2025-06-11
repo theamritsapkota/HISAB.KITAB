@@ -14,6 +14,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import { Mail, Lock, Eye, EyeOff, ArrowRight, User } from 'lucide-react-native';
+import { apiService } from '@/services/api';
 
 export default function LoginScreen() {
   const [email, setEmail] = useState('');
@@ -29,8 +30,11 @@ export default function LoginScreen() {
 
     setLoading(true);
     try {
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1500));
+      // Login with API
+      const { token, user } = await apiService.login(email.trim(), password);
+      
+      // Store auth token
+      apiService.setAuthToken(token);
       
       Alert.alert('Success', 'Login successful!', [
         {
@@ -39,6 +43,7 @@ export default function LoginScreen() {
         },
       ]);
     } catch (error) {
+      console.error('Login error:', error);
       Alert.alert('Error', 'Login failed. Please try again.');
     } finally {
       setLoading(false);
@@ -51,8 +56,11 @@ export default function LoginScreen() {
     setPassword('demo123');
     
     try {
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      // Demo login with API
+      const { token, user } = await apiService.login('demo@example.com', 'demo123');
+      
+      // Store auth token
+      apiService.setAuthToken(token);
       
       Alert.alert('Demo Login', 'Logged in with demo account!', [
         {
@@ -61,6 +69,7 @@ export default function LoginScreen() {
         },
       ]);
     } catch (error) {
+      console.error('Demo login error:', error);
       Alert.alert('Error', 'Demo login failed. Please try again.');
     } finally {
       setLoading(false);
@@ -145,7 +154,7 @@ export default function LoginScreen() {
               disabled={loading}
             >
               {loading ? (
-                <ActivityIndicator color="#ffffff\" size="small" />
+                <ActivityIndicator color="#ffffff" size="small" />
               ) : (
                 <>
                   <Text style={styles.loginButtonText}>Sign In</Text>
