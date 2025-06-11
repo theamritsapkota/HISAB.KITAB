@@ -14,6 +14,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import { Mail, Lock, Eye, EyeOff, ArrowRight, User, Phone, ArrowLeft } from 'lucide-react-native';
+import { apiService } from '@/services/api';
 
 export default function SignupScreen() {
   const [formData, setFormData] = useState({
@@ -78,10 +79,27 @@ export default function SignupScreen() {
 
     setLoading(true);
     try {
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1500));
-      
-      // // Navigate to OTP verification
+      // Register user with API
+      const { token, user } = await apiService.register(
+        formData.name.trim(),
+        formData.email.trim(),
+        formData.password
+      );
+
+      // Store auth token
+      apiService.setAuthToken(token);
+
+      Alert.alert('Success', 'Account created successfully!', [
+        {
+          text: 'OK',
+          onPress: () => {
+            // Navigate directly to main app (OTP verification commented out)
+            router.replace('/(tabs)');
+          },
+        },
+      ]);
+
+      // OTP Verification is commented out as requested
       // router.push({
       //   pathname: '/(auth)/otp-verification',
       //   params: { 
@@ -91,6 +109,7 @@ export default function SignupScreen() {
       //   }
       // });
     } catch (error) {
+      console.error('Signup error:', error);
       Alert.alert('Error', 'Signup failed. Please try again.');
     } finally {
       setLoading(false);
@@ -255,7 +274,7 @@ export default function SignupScreen() {
               disabled={loading}
             >
               {loading ? (
-                <ActivityIndicator color="#ffffff\" size="small" />
+                <ActivityIndicator color="#ffffff" size="small" />
               ) : (
                 <>
                   <Text style={styles.signupButtonText}>Create Account</Text>
