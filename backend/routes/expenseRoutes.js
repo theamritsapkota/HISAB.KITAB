@@ -1,19 +1,28 @@
 const express = require('express');
-const { createExpense, getExpensesByGroup, getAllExpenses } = require('../controllers/expenseController');
-const protect = require('../middleware/authMiddleware');
-
 const router = express.Router();
+const Expense = require('../models/Expense');
 
-// All routes are protected - require authentication
-router.use(protect);
+// Add an expense
+router.post('/add', async (req, res) => {
+  const { title, amount, group, paidBy, splitAmong, date } = req.body;
 
-// Create a new expense
-router.post('/', createExpense);
+  try {
+    const newExpense = new Expense({ title, amount, group, paidBy, splitAmong, date });
+    await newExpense.save();
+    res.status(201).json({ message: 'Expense added', expense: newExpense });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
 
-// Get all expenses for the authenticated user
-router.get('/', getAllExpenses);
-
-// Get expenses for a specific group
-router.get('/group/:groupId', getExpensesByGroup);
+// Get all expenses
+router.get('/', async (req, res) => {
+  try {
+    const expenses = await Expense.find().populate('group paidBy splitAmong');
+    res.json(expenses);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
 
 module.exports = router;

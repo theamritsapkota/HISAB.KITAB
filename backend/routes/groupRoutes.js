@@ -1,19 +1,28 @@
 const express = require('express');
-const { createGroup, getGroups, getGroupById } = require('../controllers/groupController');
-const protect = require('../middleware/authMiddleware');
-
 const router = express.Router();
+const Group = require('../models/Group');
 
-// All routes are protected - require authentication
-router.use(protect);
+// Add a new group
+router.post('/add', async (req, res) => {
+  const { name, members } = req.body;
 
-// Create a new group
-router.post('/', createGroup);
+  try {
+    const newGroup = new Group({ name, members });
+    await newGroup.save();
+    res.status(201).json({ message: 'Group created', group: newGroup });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
 
-// Get all groups for the authenticated user
-router.get('/', getGroups);
-
-// Get a specific group by ID
-router.get('/:id', getGroupById);
+// Get all groups
+router.get('/', async (req, res) => {
+  try {
+    const groups = await Group.find().populate('members');
+    res.json(groups);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
 
 module.exports = router;

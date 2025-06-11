@@ -1,26 +1,20 @@
 const express = require('express');
-const User = require('../models/User');
-const bcrypt = require('bcryptjs');
-const jwt = require('jsonwebtoken');
-
 const router = express.Router();
+const User = require('../models/User');
 
-// Test registration route
-router.post('/test-register', async (req, res) => {
+// Basic login route (simple demo)
+router.post('/login', async (req, res) => {
+  const { email, password } = req.body;
   try {
-    const { username, email, password } = req.body;
+    const user = await User.findOne({ email });
 
-    const hashedPassword = await bcrypt.hash(password, 10);
+    if (!user || user.password !== password) {
+      return res.status(401).json({ message: 'Invalid credentials' });
+    }
 
-    const user = await User.create({
-      name: username, // Changed from username to name to match User model
-      email,
-      password: hashedPassword,
-    });
-
-    res.status(201).json({ message: 'User created', user: { id: user._id, name: user.name, email: user.email } });
+    res.json({ message: 'Login successful', user });
   } catch (err) {
-    res.status(500).json({ message: 'Something went wrong', error: err.message });
+    res.status(500).json({ error: err.message });
   }
 });
 

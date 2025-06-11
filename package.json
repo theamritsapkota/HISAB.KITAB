@@ -34,7 +34,7 @@
     "expo-symbols": "~0.4.3",
     "expo-system-ui": "~5.0.5",
     "expo-web-browser": "~14.1.5",
-    "express": "^5.1.0",
+    "express": "^4.21.2",
     "jsonwebtoken": "^9.0.2",
     "lucide-react-native": "^0.475.0",
     "mongodb": "^6.17.0",

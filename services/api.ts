@@ -5,7 +5,7 @@ import { Group, Expense, User, ApiResponse } from '@/types';
 const API_BASE_URL = 'http://localhost:5000/api';
 const USE_MOCK_DATA = false; // Set to true to use mock data instead of API
 
-// Mock data for development (keeping existing mock data)
+// Mock data for development (keeping existing mock data for fallback)
 const mockGroups: Group[] = [
   {
     id: '1',
@@ -134,14 +134,14 @@ const api = axios.create({
   },
 });
 
+// Auth token storage (in a real app, use secure storage)
+let authToken: string | null = null;
+
 // Request interceptor to add auth token
 api.interceptors.request.use(
   (config) => {
-    // For demo purposes, we'll use a mock token
-    // In a real app, you'd get this from secure storage
-    const token = 'demo_token_for_testing';
-    if (token) {
-      config.headers.Authorization = `Bearer ${token}`;
+    if (authToken) {
+      config.headers.Authorization = `Bearer ${authToken}`;
     }
     return config;
   },
@@ -155,6 +155,13 @@ api.interceptors.response.use(
   (response) => response,
   (error) => {
     console.error('API Error:', error.response?.data || error.message);
+    
+    // Handle 401 errors (unauthorized)
+    if (error.response?.status === 401) {
+      authToken = null;
+      // In a real app, redirect to login
+    }
+    
     return Promise.reject(error);
   }
 );
@@ -188,6 +195,69 @@ const calculateGroupStats = (expenses: Expense[], members: string[]) => {
 
 // API Service Functions
 export const apiService = {
+  // Authentication
+  async login(email: string, password: string): Promise<{ token: string; user: User }> {
+    if (USE_MOCK_DATA) {
+      return new Promise((resolve) => {
+        setTimeout(() => {
+          const mockUser = {
+            id: '1',
+            name: 'Demo User',
+            email: email,
+          };
+          const mockToken = 'mock_jwt_token_' + Date.now();
+          authToken = mockToken;
+          resolve({ token: mockToken, user: mockUser });
+        }, 1000);
+      });
+    }
+
+    try {
+      const response = await api.post('/users/login', { email, password });
+      const { token, user } = response.data;
+      authToken = token;
+      return { token, user };
+    } catch (error) {
+      throw new Error('Login failed');
+    }
+  },
+
+  async register(name: string, email: string, password: string): Promise<{ token: string; user: User }> {
+    if (USE_MOCK_DATA) {
+      return new Promise((resolve) => {
+        setTimeout(() => {
+          const mockUser = {
+            id: '1',
+            name: name,
+            email: email,
+          };
+          const mockToken = 'mock_jwt_token_' + Date.now();
+          authToken = mockToken;
+          resolve({ token: mockToken, user: mockUser });
+        }, 1000);
+      });
+    }
+
+    try {
+      const response = await api.post('/users/register', { name, email, password });
+      const { token, user } = response.data;
+      authToken = token;
+      return { token, user };
+    } catch (error) {
+      throw new Error('Registration failed');
+    }
+  },
+
+  // Set auth token (for when user logs in)
+  setAuthToken(token: string) {
+    authToken = token;
+  },
+
+  // Clear auth token (for logout)
+  clearAuthToken() {
+    authToken = null;
+  },
+
   // Groups
   async getGroups(): Promise<Group[]> {
     if (USE_MOCK_DATA) {
@@ -366,25 +436,6 @@ export const apiService = {
       }
       
       return newExpense;
-    }
-  },
-
-  // Authentication (for future use)
-  async login(email: string, password: string): Promise<{ token: string; user: User }> {
-    try {
-      const response = await api.post('/users/login', { email, password });
-      return response.data;
-    } catch (error) {
-      throw new Error('Login failed');
-    }
-  },
-
-  async register(name: string, email: string, password: string): Promise<{ token: string; user: User }> {
-    try {
-      const response = await api.post('/users/register', { name, email, password });
-      return response.data;
-    } catch (error) {
-      throw new Error('Registration failed');
     }
   },
 };
