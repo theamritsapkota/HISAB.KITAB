@@ -81,15 +81,15 @@ export default function SignupScreen() {
       // Simulate API call
       await new Promise(resolve => setTimeout(resolve, 1500));
       
-      // Navigate to OTP verification
-      router.push({
-        pathname: '/(auth)/otp-verification',
-        params: { 
-          email: formData.email,
-          phone: formData.phone,
-          type: 'signup'
-        }
-      });
+      // // Navigate to OTP verification
+      // router.push({
+      //   pathname: '/(auth)/otp-verification',
+      //   params: { 
+      //     email: formData.email,
+      //     phone: formData.phone,
+      //     type: 'signup'
+      //   }
+      // });
     } catch (error) {
       Alert.alert('Error', 'Signup failed. Please try again.');
     } finally {
