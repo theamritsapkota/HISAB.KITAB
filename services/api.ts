@@ -2,7 +2,7 @@ import axios from 'axios';
 import { Group, Expense, User, ApiResponse } from '@/types';
 
 // API Configuration - Updated to match the backend port
-const API_BASE_URL  = 'http://192.168.1.85:5051';
+const API_BASE_URL = 'http://localhost:5051';
 
 const USE_MOCK_DATA = false; 
 
@@ -210,7 +210,7 @@ export const apiService = {
 
     try {
       console.log('Fetching groups...');
-      const response = await api.get('/groups');
+      const response = await api.get('/api/groups');
       console.log('Groups response:', response.data);
       
       return response.data.data || response.data;
@@ -232,7 +232,7 @@ export const apiService = {
 
     try {
       console.log('Fetching group:', id);
-      const response = await api.get(`/groups/${id}`);
+      const response = await api.get(`/api/groups/${id}`);
       console.log('Group response:', response.data);
       
       return response.data.data || response.data;
@@ -262,7 +262,7 @@ export const apiService = {
 
     try {
       console.log('Creating group:', group);
-      const response = await api.post('/groups', group);
+      const response = await api.post('/api/groups', group);
       console.log('Create group response:', response.data);
       
       return response.data.data || response.data;
@@ -288,7 +288,7 @@ export const apiService = {
 
     try {
       console.log('Fetching expenses for group:', groupId);
-      const response = await api.get(`/expenses/group/${groupId}`);
+      const response = await api.get(`/api/expenses/group/${groupId}`);
       console.log('Expenses response:', response.data);
       
       return response.data.data || response.data;
@@ -320,7 +320,7 @@ export const apiService = {
 
     try {
       console.log('Creating expense:', expense);
-      const response = await api.post('/expenses', expense);
+      const response = await api.post('/api/expenses', expense);
       console.log('Create expense response:', response.data);
       
       return response.data.data || response.data;

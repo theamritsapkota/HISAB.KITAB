@@ -32,8 +32,8 @@ app.use((req, res, next) => {
   next();
 });
 
-// Routes: **IMPORTANT** - mounted at '/users' for simpler URL structure
-app.use('/users', userRoutes);  // <-- This makes your routes like /users/register, /users/login
+// Routes
+app.use('/users', userRoutes);
 app.use('/api/groups', groupRoutes);
 app.use('/api/expenses', expenseRoutes);
 app.use('/api/auth', authRoutes);

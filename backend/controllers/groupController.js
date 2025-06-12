@@ -4,22 +4,37 @@ const Expense = require('../models/Expense');
 // Create a new group
 exports.createGroup = async (req, res) => {
   try {
+    console.log('Create group request body:', req.body);
+    console.log('User from auth middleware:', req.user);
+    
     const { name, description, members } = req.body;
 
     // Validation
     if (!name || !name.trim()) {
-      return res.status(400).json({ message: 'Group name is required' });
+      console.log('Validation failed: Group name is required');
+      return res.status(400).json({ 
+        success: false,
+        message: 'Group name is required' 
+      });
     }
 
     if (!members || !Array.isArray(members) || members.length === 0) {
-      return res.status(400).json({ message: 'At least one member is required' });
+      console.log('Validation failed: At least one member is required');
+      return res.status(400).json({ 
+        success: false,
+        message: 'At least one member is required' 
+      });
     }
 
     // Filter out empty members
     const validMembers = members.filter(member => member && member.trim() !== '');
     
     if (validMembers.length === 0) {
-      return res.status(400).json({ message: 'At least one valid member is required' });
+      console.log('Validation failed: At least one valid member is required');
+      return res.status(400).json({ 
+        success: false,
+        message: 'At least one valid member is required' 
+      });
     }
 
     // Create group
@@ -31,29 +46,41 @@ exports.createGroup = async (req, res) => {
     });
 
     const savedGroup = await group.save();
+    console.log('Group saved successfully:', savedGroup);
+
+    // Transform group to match frontend interface
+    const transformedGroup = {
+      id: savedGroup._id,
+      name: savedGroup.name,
+      description: savedGroup.description,
+      members: savedGroup.members,
+      totalExpenses: 0,
+      balances: {},
+      createdAt: savedGroup.createdAt,
+    };
 
     res.status(201).json({
       success: true,
-      data: {
-        id: savedGroup._id,
-        name: savedGroup.name,
-        description: savedGroup.description,
-        members: savedGroup.members,
-        totalExpenses: 0,
-        balances: {},
-        createdAt: savedGroup.createdAt,
-      }
+      data: transformedGroup,
+      message: 'Group created successfully'
     });
   } catch (error) {
     console.error('Create group error:', error);
-    res.status(500).json({ message: 'Server error while creating group' });
+    res.status(500).json({ 
+      success: false,
+      message: 'Server error while creating group',
+      error: process.env.NODE_ENV === 'development' ? error.message : undefined
+    });
   }
 };
 
 // Get all groups for the authenticated user
 exports.getGroups = async (req, res) => {
   try {
+    console.log('Fetching groups for user:', req.user._id);
+    
     const groups = await Group.find({ createdBy: req.user._id }).sort({ createdAt: -1 });
+    console.log(`Found ${groups.length} groups for user`);
 
     // Calculate expenses and balances for each group
     const groupsWithStats = await Promise.all(
@@ -117,22 +144,34 @@ exports.getGroups = async (req, res) => {
     });
   } catch (error) {
     console.error('Get groups error:', error);
-    res.status(500).json({ message: 'Server error while fetching groups' });
+    res.status(500).json({ 
+      success: false,
+      message: 'Server error while fetching groups',
+      error: process.env.NODE_ENV === 'development' ? error.message : undefined
+    });
   }
 };
 
 // Get a specific group by ID
 exports.getGroupById = async (req, res) => {
   try {
+    console.log('Fetching group by ID:', req.params.id);
+    
     const group = await Group.findById(req.params.id);
 
     if (!group) {
-      return res.status(404).json({ message: 'Group not found' });
+      return res.status(404).json({ 
+        success: false,
+        message: 'Group not found' 
+      });
     }
 
     // Check if user has access to this group
     if (group.createdBy.toString() !== req.user._id.toString()) {
-      return res.status(403).json({ message: 'Not authorized to access this group' });
+      return res.status(403).json({ 
+        success: false,
+        message: 'Not authorized to access this group' 
+      });
     }
 
     // Get expenses for this group
@@ -181,8 +220,15 @@ exports.getGroupById = async (req, res) => {
   } catch (error) {
     console.error('Get group by ID error:', error);
     if (error.name === 'CastError') {
-      return res.status(400).json({ message: 'Invalid group ID' });
+      return res.status(400).json({ 
+        success: false,
+        message: 'Invalid group ID' 
+      });
     }
-    res.status(500).json({ message: 'Server error while fetching group' });
+    res.status(500).json({ 
+      success: false,
+      message: 'Server error while fetching group',
+      error: process.env.NODE_ENV === 'development' ? error.message : undefined
+    });
   }
 };
