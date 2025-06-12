@@ -4,14 +4,13 @@ const { registerUser, loginUser, getUserProfile } = require('../controllers/user
 const protect = require('../middleware/authMiddleware');
 
 // Public routes
-router.post('/add', registerUser);
-router.post('/register', registerUser); // Alternative endpoint
-router.post('/login', loginUser);
+router.post('/register', registerUser);  // POST /users/register
+router.post('/login', loginUser);        // POST /users/login
 
 // Protected routes
-router.get('/profile', protect, getUserProfile);
+router.get('/profile',s protect, getUserProfile);  // GET /users/profile
 
-// Get all users (for development/testing - should be protected in production)
+// Get all users (for testing - protect in production)
 router.get('/', async (req, res) => {
   try {
     const User = require('../models/User');

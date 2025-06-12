@@ -29,6 +29,19 @@ exports.createExpense = async (req, res) => {
       return res.status(403).json({ message: 'Not authorized to add expenses to this group' });
     }
 
+    // Validate that paidBy and participants are group members
+    const validMembers = group.members;
+    if (!validMembers.includes(paidBy.trim())) {
+      return res.status(400).json({ message: 'Payer must be a group member' });
+    }
+
+    const invalidParticipants = participants.filter(p => !validMembers.includes(p.trim()));
+    if (invalidParticipants.length > 0) {
+      return res.status(400).json({ 
+        message: `Invalid participants: ${invalidParticipants.join(', ')}` 
+      });
+    }
+
     // Create expense
     const expense = new Expense({
       description: description.trim(),

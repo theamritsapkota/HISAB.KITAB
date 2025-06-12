@@ -2,6 +2,14 @@ const mongoose = require('mongoose');
 
 const connectDB = async () => {
   try {
+    // Check if MONGO_URI is provided
+    if (!process.env.MONGO_URI) {
+      console.error('❌ MONGO_URI environment variable is not set');
+      console.log('📝 Please add your MongoDB connection string to the .env file');
+      console.log('Example: MONGO_URI=mongodb+srv://username:password@cluster.mongodb.net/splitwise?retryWrites=true&w=majority');
+      process.exit(1);
+    }
+
     // MongoDB connection options
     const options = {
       useNewUrlParser: true,
@@ -11,9 +19,10 @@ const connectDB = async () => {
       family: 4 // Use IPv4, skip trying IPv6
     };
 
+    console.log('🔄 Connecting to MongoDB...');
     const conn = await mongoose.connect(process.env.MONGO_URI, options);
     
-    console.log(`✅ MongoDB Atlas Connected: ${conn.connection.host}`);
+    console.log(`✅ MongoDB Connected: ${conn.connection.host}`);
     console.log(`📊 Database: ${conn.connection.name}`);
     
     // Handle connection events
@@ -30,16 +39,22 @@ const connectDB = async () => {
     });
 
   } catch (err) {
-    console.error('❌ MongoDB Atlas Connection Failed:', err.message);
+    console.error('❌ MongoDB Connection Failed:', err.message);
     
     // Log specific connection errors
     if (err.message.includes('authentication failed')) {
       console.error('🔐 Check your username and password in the connection string');
     } else if (err.message.includes('network')) {
-      console.error('🌐 Check your network connection and Atlas cluster status');
+      console.error('🌐 Check your network connection and MongoDB Atlas cluster status');
     } else if (err.message.includes('timeout')) {
-      console.error('⏱️ Connection timeout - check your Atlas cluster is running');
+      console.error('⏱️ Connection timeout - check your MongoDB cluster is running');
     }
+    
+    console.log('💡 Make sure to:');
+    console.log('   1. Replace your_username and your_password in .env file');
+    console.log('   2. Whitelist your IP address in MongoDB Atlas');
+    console.log('   3. Ensure your cluster is running');
+    console.log('   4. URL encode special characters in your password');
     
     process.exit(1);
   }

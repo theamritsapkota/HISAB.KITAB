@@ -1,4 +1,5 @@
 const Group = require('../models/Group');
+const Expense = require('../models/Expense');
 
 // Create a new group
 exports.createGroup = async (req, res) => {
@@ -14,12 +15,19 @@ exports.createGroup = async (req, res) => {
       return res.status(400).json({ message: 'At least one member is required' });
     }
 
+    // Filter out empty members
+    const validMembers = members.filter(member => member && member.trim() !== '');
+    
+    if (validMembers.length === 0) {
+      return res.status(400).json({ message: 'At least one valid member is required' });
+    }
+
     // Create group
     const group = new Group({
       name: name.trim(),
       description: description ? description.trim() : '',
       createdBy: req.user._id,
-      members: members.filter(member => member.trim() !== ''), // Filter out empty members
+      members: validMembers.map(member => member.trim()),
     });
 
     const savedGroup = await group.save();
@@ -47,20 +55,65 @@ exports.getGroups = async (req, res) => {
   try {
     const groups = await Group.find({ createdBy: req.user._id }).sort({ createdAt: -1 });
 
-    // Transform groups to match frontend interface
-    const transformedGroups = groups.map(group => ({
-      id: group._id,
-      name: group.name,
-      description: group.description,
-      members: group.members,
-      totalExpenses: 0, // Will be calculated from expenses
-      balances: {}, // Will be calculated from expenses
-      createdAt: group.createdAt,
-    }));
+    // Calculate expenses and balances for each group
+    const groupsWithStats = await Promise.all(
+      groups.map(async (group) => {
+        try {
+          // Get expenses for this group
+          const expenses = await Expense.find({ groupId: group._id });
+          
+          // Calculate total expenses
+          const totalExpenses = expenses.reduce((sum, expense) => sum + expense.amount, 0);
+          
+          // Calculate balances
+          const balances = {};
+          group.members.forEach(member => {
+            balances[member] = 0;
+          });
+
+          expenses.forEach(expense => {
+            const splitAmount = expense.amount / expense.participants.length;
+            
+            // Add to payer's balance
+            if (balances.hasOwnProperty(expense.paidBy)) {
+              balances[expense.paidBy] += expense.amount;
+            }
+            
+            // Subtract split amount from each participant
+            expense.participants.forEach(participant => {
+              if (balances.hasOwnProperty(participant)) {
+                balances[participant] -= splitAmount;
+              }
+            });
+          });
+
+          return {
+            id: group._id,
+            name: group.name,
+            description: group.description,
+            members: group.members,
+            totalExpenses,
+            balances,
+            createdAt: group.createdAt,
+          };
+        } catch (error) {
+          console.error(`Error calculating stats for group ${group._id}:`, error);
+          return {
+            id: group._id,
+            name: group.name,
+            description: group.description,
+            members: group.members,
+            totalExpenses: 0,
+            balances: {},
+            createdAt: group.createdAt,
+          };
+        }
+      })
+    );
 
     res.json({
       success: true,
-      data: transformedGroups
+      data: groupsWithStats
     });
   } catch (error) {
     console.error('Get groups error:', error);
@@ -82,14 +135,42 @@ exports.getGroupById = async (req, res) => {
       return res.status(403).json({ message: 'Not authorized to access this group' });
     }
 
+    // Get expenses for this group
+    const expenses = await Expense.find({ groupId: group._id });
+    
+    // Calculate total expenses
+    const totalExpenses = expenses.reduce((sum, expense) => sum + expense.amount, 0);
+    
+    // Calculate balances
+    const balances = {};
+    group.members.forEach(member => {
+      balances[member] = 0;
+    });
+
+    expenses.forEach(expense => {
+      const splitAmount = expense.amount / expense.participants.length;
+      
+      // Add to payer's balance
+      if (balances.hasOwnProperty(expense.paidBy)) {
+        balances[expense.paidBy] += expense.amount;
+      }
+      
+      // Subtract split amount from each participant
+      expense.participants.forEach(participant => {
+        if (balances.hasOwnProperty(participant)) {
+          balances[participant] -= splitAmount;
+        }
+      });
+    });
+
     // Transform group to match frontend interface
     const transformedGroup = {
       id: group._id,
       name: group.name,
       description: group.description,
       members: group.members,
-      totalExpenses: 0, // Will be calculated from expenses
-      balances: {}, // Will be calculated from expenses
+      totalExpenses,
+      balances,
       createdAt: group.createdAt,
     };
 
