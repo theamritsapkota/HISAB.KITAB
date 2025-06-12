@@ -8,7 +8,7 @@ router.post('/register', registerUser);  // POST /users/register
 router.post('/login', loginUser);        // POST /users/login
 
 // Protected routes
-router.get('/profile',s protect, getUserProfile);  // GET /users/profile
+router.get('/profile', protect, getUserProfile);  // GET /users/profile
 
 // Get all users (for testing - protect in production)
 router.get('/', async (req, res) => {
